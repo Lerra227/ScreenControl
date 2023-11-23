@@ -1,43 +1,88 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Net;
 using System.Linq;
 using System.Text;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Edge;
+using System.Threading.Tasks;
+using System.Runtime.InteropServices;
+using NDesk.Options;
+
 
 class Program
-{
-    static void Main()
+{   static int verbose;
+    static void Main(string[] args)
     {
-        // Путь к драйверу Edge
-        // var edgeDriverPath = "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedgedriver.exe\"";
-        Console.WriteLine("Hello!\nEnter the path to the file with URLs:");
+        
+        bool show_help = false;
+        string screenshotsDirectory = "";
+        string urlsFile = "";
+
+
+    OptionSet p = new OptionSet()
+      .Add("v", delegate (string v) { if (v != null) ++verbose; })
+      .Add("h|?|help", delegate (string v) { show_help = v != null; })
+      .Add("s|send=", "path to directory(send results)", delegate(string v) { screenshotsDirectory = v; })
+      .Add("o|open=", "path to file(open)", delegate (string v) { urlsFile = v; });
+
+        List<string> extra;
+        try
+        {
+            extra = p.Parse(args);
+        }
+        catch (OptionException e)
+        {
+            Console.WriteLine(e.Message);
+            Console.WriteLine("Try `-h' for more information.");
+            return;
+        }
+
+        if (show_help)
+        {
+            ShowHelp(p);
+            return;
+        }
+
+        static void ShowHelp(OptionSet p)
+        {
+            Console.WriteLine("Example: [PATH TO FILE WITH URLS] -o [PATH TO DIRECTORY FOR SCREENSHOTS] ");
+            Console.WriteLine("Options:");
+            p.WriteOptionDescriptions(Console.Out);
+        }
+
+        static void Debug(string format, params object[] args)
+        {
+            if (verbose > 0)
+            {
+                Console.Write("# ");
+                Console.WriteLine(format, args);
+            }
+        }
         // Путь к файлу с URL
-        string urlsFilePath = Console.ReadLine();
-       
 
-        Console.WriteLine("Enter the path to save the file with screenshots:");
-        string screenshotsDirectory = Console.ReadLine();
-       
+        if (!File.Exists(urlsFile))
+        {
+            Console.WriteLine("File not found: " + urlsFile);
+            return;
+        }
 
-        Console.WriteLine("Enter the path to the future report directory:");
-        string reportDirectory = Console.ReadLine();
+        
 
-        if (urlsFilePath == null || screenshotsDirectory == null|| reportDirectory == null) throw new Exception("Data was not entered");
+        if (urlsFile == null || screenshotsDirectory == null) throw new Exception("Data was not entered");
 
 
 
         // Создание экземпляра драйвера Edge
-        // using (var driver = new EdgeDriver(edgeDriverPath))
         using (var driver = new EdgeDriver())
         {
             // Чтение URL из файла
-            var urls = File.ReadAllLines(urlsFilePath);
+            var urls = File.ReadAllLines(urlsFile);
+            
 
             // Создание каталога для сохранения скриншотов
-           // var screenshotsDirectory = "C:\\Users\\amana\\Documents\\screenshots";
             Directory.CreateDirectory(screenshotsDirectory);
 
             // Создание списка для хранения результатов запросов
@@ -46,11 +91,19 @@ class Program
             // Обход каждого URL
             foreach (var url in urls)
             {
+                string htmlContent = LoadWebPage(url);
+
+              
+                if(htmlContent == null)
+                {
+                    Console.WriteLine("Failed to load");
+                }
                 // Открытие URL в браузере
                 driver.Navigate().GoToUrl(url);
 
+                string HashName = Convert.ToString(GetHashCode(url)) + ".png";
                 // Получение скриншота
-                var screenshotPath = Path.Combine(screenshotsDirectory, $"{GetHashCode(url)}.png");
+                var screenshotPath = Path.Combine(screenshotsDirectory, HashName);
                 ((ITakesScreenshot)driver).GetScreenshot().SaveAsFile(screenshotPath, ScreenshotImageFormat.Png);
 
                 // Добавление результатов запроса
@@ -62,15 +115,12 @@ class Program
                 });
             }
 
-            // Создание каталога для сохранения отчета
-          //  var reportDirectory = "C:\\Users\\amana\\Documents\\report.txt";
-            Directory.CreateDirectory(reportDirectory);
 
             // Группировка результатов по похожести скриншотов
             var groupedResults = results.GroupBy(r => GetSimilarityHash(r.ScreenshotPath));
 
             // Создание отчета HTML
-            var reportPath = Path.Combine(reportDirectory, "report.html");
+            var reportPath = Path.Combine(screenshotsDirectory, "report.html");
             using (var writer = new StreamWriter(reportPath))
             {
                 writer.WriteLine("<html><head><title>Report</title></head><body>");
@@ -81,16 +131,33 @@ class Program
 
                     foreach (var result in group)
                     {
-                        writer.WriteLine($"<p>URL: {result.Url}</p>");
-                        writer.WriteLine($"<p>Screenshot: <img src='{result.ScreenshotPath}' width='300'/></p>");
-                        writer.WriteLine($"<p>Page Source: {result.PageSource}</p>");
+                        writer.WriteLine("<p>URL:" + result.Url + "</p>");
+                        writer.WriteLine("<p>Screenshot: <img src='" + result.ScreenshotPath + "' width='300'/></p>");
+                        writer.WriteLine("<p>Page Source: "+ result.PageSource + "</p>");
                     }
                 }
 
                 writer.WriteLine("</body></html>");
             }
 
-            Console.WriteLine($"Отчет сохранен в {reportPath}");
+            Console.WriteLine("Отчет сохранен в " + reportPath);
+        }
+    }
+
+    static string LoadWebPage(string url)
+    {
+        try
+        {
+            using (var client = new WebClient())
+            {
+                // Загрузка содержимого веб-страницы.
+                return client.DownloadString(url);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Ошибка при загрузке веб-страницы: " + ex.Message);
+            return null;
         }
     }
 
@@ -100,26 +167,6 @@ class Program
         var image = new Bitmap(imagePath);
         return image.GetHashCode();
     }
-   /* {
-        using (var image = new Bitmap(imagePath))
-        {
-            using (var resized = new Bitmap(image, new Size(8, 8)))
-            {
-                var hash = new StringBuilder();
-
-                for (var y = 0; y < resized.Height; y++)
-                {
-                    for (var x = 0; x < resized.Width; x++)
-                    {
-                        var pixel = resized.GetPixel(x, y);
-                        hash.Append(pixel.GetBrightness() < 0.5 ? "0" : "1");
-                    }
-                }
-
-                return Convert.ToDouble(hash.ToString(), 2);
-            }
-        }
-    } */
 
     // Получение хеша для определения похожести URL
     static int GetHashCode(string url)
