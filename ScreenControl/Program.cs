@@ -22,11 +22,11 @@ class Program
         string urlsFile = "";
 
 
-    OptionSet p = new OptionSet()
+ OptionSet p = new OptionSet()
       .Add("v", delegate (string v) { if (v != null) ++verbose; })
       .Add("h|?|help", delegate (string v) { show_help = v != null; })
-      .Add("s|send=", "path to directory(send results)", delegate(string v) { screenshotsDirectory = v; })
-      .Add("o|open=", "path to file(open)", delegate (string v) { urlsFile = v; });
+      .Add("o|out=", "path to directory(output directory)", delegate(string v) { screenshotsDirectory = v; })
+      .Add("u|urls=", "path to file(urls)", delegate (string v) { urlsFile = v; });
 
         List<string> extra;
         try
@@ -48,7 +48,7 @@ class Program
 
         static void ShowHelp(OptionSet p)
         {
-            Console.WriteLine("Example: [PATH TO FILE WITH URLS] -o [PATH TO DIRECTORY FOR SCREENSHOTS] ");
+            Console.WriteLine($"Example: {System.AppDomain.CurrentDomain.FriendlyName} [PATH TO FILE WITH URLS] -o [PATH TO DIRECTORY FOR SCREENSHOTS] ");
             Console.WriteLine("Options:");
             p.WriteOptionDescriptions(Console.Out);
         }
@@ -73,7 +73,27 @@ class Program
 
         if (urlsFile == null || screenshotsDirectory == null) throw new Exception("Data was not entered");
 
+        string just_style = @"   ____                             __  ___            __    _          
+  / __/____ ____ ___  ___  ___     /  |/  /___ _ ____ / /   (_)___  ___ 
+ _\ \ / __// __// -_)/ -_)/ _ \   / /|_/ // _ `// __// _ \ / // _ \/ -_)
+/___/ \__//_/   \__/ \__//_//_/  /_/  /_/ \_,_/ \__//_//_//_//_//_/\__/ 
+                                                                        ";
+        Console.WriteLine(just_style);
+        Console.WriteLine("========================================================================");
+        Console.WriteLine("\t\t\t\tby Lerra227");
+        Console.WriteLine("========================================================================\n");
 
+        var edgeDriverService =
+            OpenQA.Selenium.Edge.EdgeDriverService.CreateDefaultService();
+        EdgeOptions options = new EdgeOptions();
+        
+        if (verbose == 0) 
+        {
+            edgeDriverService.HideCommandPromptWindow = true;
+            edgeDriverService.SuppressInitialDiagnosticInformation = true;
+            options.AddArgument("--silent");
+            options.AddArgument("log-level=3");
+        }
 
         // Создание экземпляра драйвера Edge
         using (var driver = new EdgeDriver())
