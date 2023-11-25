@@ -13,7 +13,7 @@ using NDesk.Options;
 
 
 class Program
-{   static int verbose;
+{
     static void Main(string[] args)
     {
         
@@ -22,10 +22,9 @@ class Program
         string urlsFile = "";
 
 
- OptionSet p = new OptionSet()
-      .Add("v", delegate (string v) { if (v != null) ++verbose; })
+    OptionSet p = new OptionSet()
       .Add("h|?|help", delegate (string v) { show_help = v != null; })
-      .Add("o|out=", "path to directory(output directory)", delegate(string v) { screenshotsDirectory = v; })
+      .Add("o|out=", "path to directory(output directory)", delegate (string v) { screenshotsDirectory = v; })
       .Add("u|urls=", "path to file(urls)", delegate (string v) { urlsFile = v; });
 
         List<string> extra;
@@ -48,19 +47,12 @@ class Program
 
         static void ShowHelp(OptionSet p)
         {
-            Console.WriteLine($"Example: {System.AppDomain.CurrentDomain.FriendlyName} [PATH TO FILE WITH URLS] -o [PATH TO DIRECTORY FOR SCREENSHOTS] ");
+            Console.WriteLine("Example: [PATH TO FILE WITH URLS] -o [PATH TO DIRECTORY FOR SCREENSHOTS] ");
             Console.WriteLine("Options:");
             p.WriteOptionDescriptions(Console.Out);
         }
 
-        static void Debug(string format, params object[] args)
-        {
-            if (verbose > 0)
-            {
-                Console.Write("# ");
-                Console.WriteLine(format, args);
-            }
-        }
+       
         // Путь к файлу с URL
 
         if (!File.Exists(urlsFile))
@@ -83,17 +75,7 @@ class Program
         Console.WriteLine("\t\t\t\tby Lerra227");
         Console.WriteLine("========================================================================\n");
 
-        var edgeDriverService =
-            OpenQA.Selenium.Edge.EdgeDriverService.CreateDefaultService();
-        EdgeOptions options = new EdgeOptions();
-        
-        if (verbose == 0) 
-        {
-            edgeDriverService.HideCommandPromptWindow = true;
-            edgeDriverService.SuppressInitialDiagnosticInformation = true;
-            options.AddArgument("--silent");
-            options.AddArgument("log-level=3");
-        }
+
 
         // Создание экземпляра драйвера Edge
         using (var driver = new EdgeDriver())
@@ -160,7 +142,7 @@ class Program
                 writer.WriteLine("</body></html>");
             }
 
-            Console.WriteLine("Отчет сохранен в " + reportPath);
+            Console.WriteLine("Report saved in " + reportPath);
         }
     }
 
@@ -176,7 +158,7 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Ошибка при загрузке веб-страницы: " + ex.Message);
+            Console.WriteLine("failed to load: " + ex.Message);
             return null;
         }
     }
