@@ -2,22 +2,19 @@
 
 
 
-Часто возникает необходимость сохранять скриншоты веб-страниц для анализа, архивации или презентации результатов работы. Однако, вручную делать скриншоты каждой страницы - трудоемкий и неэффективный процесс.
+This tool is designed to take screenshots of websites and generate a report cataloging the screenshots in HTML. It will be useful for analyzing the attack surface and for other purposes.
 
-**Данная утилита как раз создана для выполнения скриншотов сайтов и получения отчета с каталогизацией скриншотов в HTML.**
 
-![image](https://github.com/user-attachments/assets/6fe6cced-cf80-461f-93c6-3b54617baa8c)
 
-Входные данные представляют собой путь к файлу со списком адресов веб-страниц и путь к директории, в которой будут храниться результаты выполнения программы.
-![image](https://github.com/user-attachments/assets/2d8b2468-b93f-4f0a-94b1-ae77cb4d48cf)
+The input consists of a path to a file containing a list of web page addresses and a path to the directory where the program's results will be stored. 
 
-В пути, указанном пользователем, создается папка, в которой лежат сделанные скриншоты и полученный отчет в HTML.
+## Command-line options
+```sh
+-o, --out=VALUE  Path to output directory
 
-ScreenControl успешно прошел проверку по следующим пунктам:
-```sh 
-1.	Тестирование функциональности на различных сайтах.
-2.	Проверка качества сделанных скриншотов.
-3.	Проверка возможности сохранения скриншотов в заданную директорию.
-4.	Создание большого количества скриншотов.
+-u, --urls=VALUE  Path to file with URLs
 ```
+
+A folder is created at the user's specified path, containing the screenshots and the generated HTML report.
+
 
